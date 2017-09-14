@@ -6,7 +6,7 @@ var cacheBusterDate = +new Date();
 
 // leaflet-image
 module.exports = function leafletImage(map, callback) {
-
+    var layers = [];
     var hasMapbox = !!L.mapbox;
 
     var dimensions = map.getSize(),
@@ -35,18 +35,60 @@ module.exports = function leafletImage(map, callback) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     } else if (map._panes) {
         // custom implementation for CanvasLayer (CEDEJ-Atlas)
-        var customCanvas = map._panes.tilePane.querySelector('.leaflet-canvas-layer canvas.active');
-        if (customCanvas) { layerQueue.defer(handlePathRoot, customCanvas); }
+        var canvasLayer = map._panes.tilePane
+          .querySelector('.leaflet-canvas-layer');
+        if (canvasLayer) {
+          var zIndex = canvasLayer.style.zIndex;
+          var customCanvas = canvasLayer.querySelector('canvas.active');
+          addToQueue(handlePathRoot, customCanvas, zIndex); 
+        }
         
         var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
-        if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
+        if (firstCanvas) {
+          var zIndex = maxZIndex() + 100;
+          addToQueue(handlePathRoot, firstCanvas, zIndex);
+          
+        }
         
     }
     map.eachLayer(drawMarkerLayer);
-    layerQueue.awaitAll(layersDone);
+
+    runQueue();
+    function maxZIndex(){
+      var max = -1, i = 0, len = layers.length;
+      for(i; i<len; i+=1){
+        if(layers[i].zIndex > max){
+          max = layers[i].zIndex;
+        }
+      }
+      return max;
+    }
+    function runQueue(){
+      layers
+        .sort(function(a,b){ return a.zIndex > b.zIndex;})
+        .forEach(function(layer){
+          layerQueue.defer(layer.callback, layer.element);
+        });
+      layerQueue.awaitAll(layersDone);
+    }
+    
+    function addToQueue(callback, elem, zIndex){
+      if(!zIndex){
+        zIndex = layers.length;
+      }
+      layers.push({
+        callback: callback,
+        element: elem,
+        zIndex:zIndex
+      });
+    }
 
     function drawTileLayer(l) {
-        if (l instanceof L.TileLayer) layerQueue.defer(handleTileLayer, l);
+        if (l instanceof L.TileLayer){
+          var zIndex = l._container ? (l._container.style.zIndex || null) : null;
+          addToQueue(handleTileLayer, l, zIndex);
+          layerQueue.defer(handleTileLayer, l);
+        }
         else if (l._heat) layerQueue.defer(handlePathRoot, l._canvas);
     }
 
@@ -67,7 +109,8 @@ module.exports = function leafletImage(map, callback) {
     function done() {
         callback(null, canvas);
     }
-
+    
+    
     function layersDone(err, layers) {
         if (err) throw err;
         layers.forEach(function (layer) {
