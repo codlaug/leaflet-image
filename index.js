@@ -34,12 +34,13 @@ module.exports = function leafletImage(map, callback) {
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     } else if (map._panes) {
-        var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
-        if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
-        
         // custom implementation for CanvasLayer (CEDEJ-Atlas)
         var customCanvas = map._panes.tilePane.querySelector('.leaflet-canvas-layer canvas.active');
         if (customCanvas) { layerQueue.defer(handlePathRoot, customCanvas); }
+        
+        var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
+        if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
+        
     }
     map.eachLayer(drawMarkerLayer);
     layerQueue.awaitAll(layersDone);
