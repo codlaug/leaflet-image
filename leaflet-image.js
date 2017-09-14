@@ -37,6 +37,7 @@ module.exports = function leafletImage(map, callback) {
     } else if (map._panes) {
         var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
         if (firstCanvas) { layerQueue.defer(handlePathRoot, firstCanvas); }
+        
         // custom implementation for CanvasLayer (CEDEJ-Atlas)
         var customCanvas = map._panes.tilePane.querySelector('.leaflet-canvas-layer canvas.active');
         if (customCanvas) { layerQueue.defer(handlePathRoot, customCanvas); }
@@ -187,9 +188,18 @@ module.exports = function leafletImage(map, callback) {
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
-        var pos = L.DomUtil.getPosition(root).subtract(bounds.min).add(origin);
-        try {
-            ctx.drawImage(root, pos.x, pos.y, canvas.width - (pos.x * 2), canvas.height - (pos.y * 2));
+        var rootPos = L.DomUtil.getPosition(root);                                                  
+        var pos = rootPos.subtract(bounds.min).add(origin);                                         
+        var useCustom = root.classList.contains('active');                                          
+        if(useCustom){                                                                              
+            pos = origin.subtract(bounds.min).add(rootPos);                                           
+        }                                                                                              
+        try {                                                                                          
+            if(!useCustom){                                                                               
+                ctx.drawImage(root, pos.x, pos.y, canvas.width - (pos.x * 2), canvas.height - (pos.y * 2)); 
+            } else {                                                                                     
+                ctx.drawImage(root, pos.x, pos.y, root.width, root.height);                                
+            }
             callback(null, {
                 canvas: canvas
             });
@@ -253,6 +263,8 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function addCacheString(url) {
+        // workaround for https://github.com/mapbox/leaflet-image/issues/84
+        if (!url) return url;
         // If it's a data URL we don't want to touch this.
         if (isDataURL(url) || url.indexOf('mapbox.com/styles/v1') !== -1) {
             return url;
