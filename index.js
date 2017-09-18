@@ -5,11 +5,11 @@ var queue = require('d3-queue').queue;
 var cacheBusterDate = +new Date();
 
 // leaflet-image
-module.exports = function leafletImage(map, callback) {
+module.exports = function leafletImage(map, size, callback) {
     var layers = [];
     var hasMapbox = !!L.mapbox;
 
-    var dimensions = map.getSize(),
+    var dimensions = size || map.getSize(),
         layerQueue = new queue(1);
 
     var canvas = document.createElement('canvas');
@@ -34,22 +34,11 @@ module.exports = function leafletImage(map, callback) {
     if (map._pathRoot) {
         layerQueue.defer(handlePathRoot, map._pathRoot);
     } else if (map._panes) {
-        // custom implementation for CanvasLayer (CEDEJ-Atlas)
-        var canvasLayer = map._panes.tilePane
-          .querySelector('.leaflet-canvas-layer');
-        if (canvasLayer) {
-          var zIndex = canvasLayer.style.zIndex;
-          var customCanvas = canvasLayer.querySelector('canvas.active');
-          addToQueue(handlePathRoot, customCanvas, zIndex); 
-        }
-        
         var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
         if (firstCanvas) {
           var zIndex = maxZIndex() + 100;
           addToQueue(handlePathRoot, firstCanvas, zIndex);
-          
         }
-        
     }
     map.eachLayer(drawMarkerLayer);
 
@@ -122,8 +111,7 @@ module.exports = function leafletImage(map, callback) {
     }
 
     function handleTileLayer(layer, callback) {
-        // `L.TileLayer.Canvas` was removed in leaflet 1.0
-        var isCanvasLayer = (L.TileLayer.Canvas && layer instanceof L.TileLayer.Canvas),
+        var isCanvasLayer = layer.isCanvasLayer ? layer.isCanvasLayer() : false,
             canvas = document.createElement('canvas');
 
         canvas.width = dimensions.x;
@@ -168,7 +156,7 @@ module.exports = function leafletImage(map, callback) {
 
             if (tilePoint.y >= 0) {
                 if (isCanvasLayer) {
-                    var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y];
+                    var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y + ':' + zoom];
                     tileQueue.defer(canvasTile, tile, tilePos, tileSize);
                 } else {
                     var url = addCacheString(layer.getTileUrl(tilePoint));
