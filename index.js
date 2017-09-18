@@ -73,7 +73,7 @@ module.exports = function leafletImage(map, callback, size) {
     }
 
     function drawTileLayer(l) {
-        if (l instanceof L.TileLayer){
+        if (l instanceof L.GridLayer){
           var zIndex = l._container ? (l._container.style.zIndex || null) : null;
           addToQueue(handleTileLayer, l, zIndex);
           layerQueue.defer(handleTileLayer, l);
