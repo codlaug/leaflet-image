@@ -5,7 +5,7 @@ var queue = require('d3-queue').queue;
 var cacheBusterDate = +new Date();
 
 // leaflet-image
-module.exports = function leafletImage(map, size, callback) {
+module.exports = function leafletImage(map, callback, size) {
     var layers = [];
     var hasMapbox = !!L.mapbox;
 
