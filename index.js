@@ -157,7 +157,7 @@ module.exports = function leafletImage(map, callback, size) {
             if (tilePoint.y >= 0) {
                 if (isCanvasLayer) {
                     var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y + ':' + zoom];
-                    tileQueue.defer(canvasTile, tile, tilePos, tileSize);
+                    tileQueue.defer(canvasTile, tile.el, tilePos, tileSize);
                 } else {
                     var url = addCacheString(layer.getTileUrl(tilePoint));
                     tileQueue.defer(loadTile, url, tilePos, tileSize);
