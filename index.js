@@ -215,22 +215,15 @@ module.exports = function leafletImage(map, callback, size) {
     function handlePathRoot(root, callback) {
         var bounds = map.getPixelBounds(),
             origin = map.getPixelOrigin(),
-            canvas = document.createElement('canvas');
+            canvas = document.createElement('canvas'),
+            mapDim = map.getSize(),
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
         var rootPos = L.DomUtil.getPosition(root);                                                  
         var pos = rootPos.subtract(bounds.min).add(origin);                                         
-        var useCustom = root.classList.contains('active');                                          
-        if(useCustom){                                                                              
-            pos = origin.subtract(bounds.min).add(rootPos);                                           
-        }                                                                                              
         try {                                                                                          
-            if(!useCustom){                                                                               
-                ctx.drawImage(root, pos.x, pos.y, canvas.width - (pos.x * 2), canvas.height - (pos.y * 2)); 
-            } else {                                                                                     
-                ctx.drawImage(root, pos.x, pos.y, root.width, root.height);                                
-            }
+            ctx.drawImage(root, pos.x, pos.y, mapDim.x - (pos.x * 2), mapDim.y - (pos.y * 2)); 
             callback(null, {
                 canvas: canvas
             });
