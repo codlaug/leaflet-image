@@ -11,7 +11,9 @@ module.exports = function leafletImage(map, callback, size) {
 
     var dimensions = size || map.getSize(),
         layerQueue = new queue(1);
-
+    if(size){
+      setSize(size);
+    }
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
     canvas.height = dimensions.y;
@@ -95,8 +97,22 @@ module.exports = function leafletImage(map, callback, size) {
         }
     }
 
+    function setSize(size){ 
+      var container = document.querySelector('.leaflet-container');
+      container.style.height = size.y + 'px';
+      container.style.width = size.x + 'px';
+      map.invalidateSize();
+    }
+
+    function resetSize(){
+      var container = document.querySelector('.leaflet-container');
+      container.style.height = '100%';
+      container.style.width = '100%';
+      map.invalidateSize();
+    }
     function done() {
-        callback(null, canvas);
+      if(size){ resetSize(); }  
+      callback(null, canvas);
     }
     
     
