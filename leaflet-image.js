@@ -6,13 +6,15 @@ var queue = require('d3-queue').queue;
 var cacheBusterDate = +new Date();
 
 // leaflet-image
-module.exports = function leafletImage(map, size, callback) {
+module.exports = function leafletImage(map, callback, size) {
     var layers = [];
     var hasMapbox = !!L.mapbox;
 
     var dimensions = size || map.getSize(),
         layerQueue = new queue(1);
-
+    if(size){
+        setSize(size);
+    }
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
     canvas.height = dimensions.y;
@@ -37,47 +39,47 @@ module.exports = function leafletImage(map, size, callback) {
     } else if (map._panes) {
         var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
         if (firstCanvas) {
-          var zIndex = maxZIndex() + 100;
-          addToQueue(handlePathRoot, firstCanvas, zIndex);
+            var zIndex = maxZIndex() + 100;
+            addToQueue(handlePathRoot, firstCanvas, zIndex);
         }
     }
     map.eachLayer(drawMarkerLayer);
 
     runQueue();
     function maxZIndex(){
-      var max = -1, i = 0, len = layers.length;
-      for(i; i<len; i+=1){
-        if(layers[i].zIndex > max){
-          max = layers[i].zIndex;
+        var max = -1, i = 0, len = layers.length;
+        for(i; i<len; i+=1){
+            if(layers[i].zIndex > max){
+                max = layers[i].zIndex;
+            }
         }
-      }
-      return max;
+        return max;
     }
     function runQueue(){
-      layers
+        layers
         .sort(function(a,b){ return a.zIndex > b.zIndex;})
         .forEach(function(layer){
-          layerQueue.defer(layer.callback, layer.element);
+            layerQueue.defer(layer.callback, layer.element);
         });
-      layerQueue.awaitAll(layersDone);
+        layerQueue.awaitAll(layersDone);
     }
     
     function addToQueue(callback, elem, zIndex){
-      if(!zIndex){
-        zIndex = layers.length;
-      }
-      layers.push({
-        callback: callback,
-        element: elem,
-        zIndex:zIndex
-      });
+        if(!zIndex){
+            zIndex = layers.length;
+        }
+        layers.push({
+            callback: callback,
+            element: elem,
+            zIndex:zIndex
+        });
     }
 
     function drawTileLayer(l) {
-        if (l instanceof L.TileLayer){
-          var zIndex = l._container ? (l._container.style.zIndex || null) : null;
-          addToQueue(handleTileLayer, l, zIndex);
-          layerQueue.defer(handleTileLayer, l);
+        if (l instanceof L.GridLayer){
+            var zIndex = l._container ? (l._container.style.zIndex || null) : null;
+            addToQueue(handleTileLayer, l, zIndex);
+            layerQueue.defer(handleTileLayer, l);
         }
         else if (l._heat) layerQueue.defer(handlePathRoot, l._canvas);
     }
@@ -96,7 +98,21 @@ module.exports = function leafletImage(map, size, callback) {
         }
     }
 
+    function setSize(size){ 
+        var container = document.querySelector('.leaflet-container');
+        container.style.height = size.y + 'px';
+        container.style.width = size.x + 'px';
+        map.invalidateSize();
+    }
+
+    function resetSize(){
+        var container = document.querySelector('.leaflet-container');
+        container.style.height = '100%';
+        container.style.width = '100%';
+        map.invalidateSize();
+    }
     function done() {
+        if(size){ resetSize(); }  
         callback(null, canvas);
     }
     
@@ -158,7 +174,7 @@ module.exports = function leafletImage(map, size, callback) {
             if (tilePoint.y >= 0) {
                 if (isCanvasLayer) {
                     var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y + ':' + zoom];
-                    tileQueue.defer(canvasTile, tile, tilePos, tileSize);
+                    tileQueue.defer(canvasTile, tile.el, tilePos, tileSize);
                 } else {
                     var url = addCacheString(layer.getTileUrl(tilePoint));
                     tileQueue.defer(loadTile, url, tilePos, tileSize);
@@ -216,22 +232,15 @@ module.exports = function leafletImage(map, size, callback) {
     function handlePathRoot(root, callback) {
         var bounds = map.getPixelBounds(),
             origin = map.getPixelOrigin(),
-            canvas = document.createElement('canvas');
+            canvas = document.createElement('canvas'),
+            mapDim = map.getSize();
         canvas.width = dimensions.x;
         canvas.height = dimensions.y;
         var ctx = canvas.getContext('2d');
         var rootPos = L.DomUtil.getPosition(root);                                                  
         var pos = rootPos.subtract(bounds.min).add(origin);                                         
-        var useCustom = root.classList.contains('active');                                          
-        if(useCustom){                                                                              
-            pos = origin.subtract(bounds.min).add(rootPos);                                           
-        }                                                                                              
         try {                                                                                          
-            if(!useCustom){                                                                               
-                ctx.drawImage(root, pos.x, pos.y, canvas.width - (pos.x * 2), canvas.height - (pos.y * 2)); 
-            } else {                                                                                     
-                ctx.drawImage(root, pos.x, pos.y, root.width, root.height);                                
-            }
+            ctx.drawImage(root, pos.x, pos.y, mapDim.x - (pos.x * 2), mapDim.y - (pos.y * 2)); 
             callback(null, {
                 canvas: canvas
             });

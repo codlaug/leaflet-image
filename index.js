@@ -12,7 +12,7 @@ module.exports = function leafletImage(map, callback, size) {
     var dimensions = size || map.getSize(),
         layerQueue = new queue(1);
     if(size){
-      setSize(size);
+        setSize(size);
     }
     var canvas = document.createElement('canvas');
     canvas.width = dimensions.x;
@@ -38,47 +38,47 @@ module.exports = function leafletImage(map, callback, size) {
     } else if (map._panes) {
         var firstCanvas = map._panes.overlayPane.getElementsByTagName('canvas').item(0);
         if (firstCanvas) {
-          var zIndex = maxZIndex() + 100;
-          addToQueue(handlePathRoot, firstCanvas, zIndex);
+            var zIndex = maxZIndex() + 100;
+            addToQueue(handlePathRoot, firstCanvas, zIndex);
         }
     }
     map.eachLayer(drawMarkerLayer);
 
     runQueue();
     function maxZIndex(){
-      var max = -1, i = 0, len = layers.length;
-      for(i; i<len; i+=1){
-        if(layers[i].zIndex > max){
-          max = layers[i].zIndex;
+        var max = -1, i = 0, len = layers.length;
+        for(i; i<len; i+=1){
+            if(layers[i].zIndex > max){
+                max = layers[i].zIndex;
+            }
         }
-      }
-      return max;
+        return max;
     }
     function runQueue(){
-      layers
+        layers
         .sort(function(a,b){ return a.zIndex > b.zIndex;})
         .forEach(function(layer){
-          layerQueue.defer(layer.callback, layer.element);
+            layerQueue.defer(layer.callback, layer.element);
         });
-      layerQueue.awaitAll(layersDone);
+        layerQueue.awaitAll(layersDone);
     }
     
     function addToQueue(callback, elem, zIndex){
-      if(!zIndex){
-        zIndex = layers.length;
-      }
-      layers.push({
-        callback: callback,
-        element: elem,
-        zIndex:zIndex
-      });
+        if(!zIndex){
+            zIndex = layers.length;
+        }
+        layers.push({
+            callback: callback,
+            element: elem,
+            zIndex:zIndex
+        });
     }
 
     function drawTileLayer(l) {
         if (l instanceof L.GridLayer){
-          var zIndex = l._container ? (l._container.style.zIndex || null) : null;
-          addToQueue(handleTileLayer, l, zIndex);
-          layerQueue.defer(handleTileLayer, l);
+            var zIndex = l._container ? (l._container.style.zIndex || null) : null;
+            addToQueue(handleTileLayer, l, zIndex);
+            layerQueue.defer(handleTileLayer, l);
         }
         else if (l._heat) layerQueue.defer(handlePathRoot, l._canvas);
     }
@@ -98,21 +98,21 @@ module.exports = function leafletImage(map, callback, size) {
     }
 
     function setSize(size){ 
-      var container = document.querySelector('.leaflet-container');
-      container.style.height = size.y + 'px';
-      container.style.width = size.x + 'px';
-      map.invalidateSize();
+        var container = document.querySelector('.leaflet-container');
+        container.style.height = size.y + 'px';
+        container.style.width = size.x + 'px';
+        map.invalidateSize();
     }
 
     function resetSize(){
-      var container = document.querySelector('.leaflet-container');
-      container.style.height = '100%';
-      container.style.width = '100%';
-      map.invalidateSize();
+        var container = document.querySelector('.leaflet-container');
+        container.style.height = '100%';
+        container.style.width = '100%';
+        map.invalidateSize();
     }
     function done() {
-      if(size){ resetSize(); }  
-      callback(null, canvas);
+        if(size){ resetSize(); }  
+        callback(null, canvas);
     }
     
     
@@ -172,7 +172,7 @@ module.exports = function leafletImage(map, callback, size) {
 
             if (tilePoint.y >= 0) {
                 if (isCanvasLayer) {
-                    var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y + ':' + zoom];
+                    var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y + ':' + layer._tileZoom];
                     tileQueue.defer(canvasTile, tile.el, tilePos, tileSize);
                 } else {
                     var url = addCacheString(layer.getTileUrl(tilePoint));
