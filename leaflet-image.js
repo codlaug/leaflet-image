@@ -171,14 +171,14 @@ module.exports = function leafletImage(map, callback, size) {
                 .scaleBy(new L.Point(tileSize, tileSize))
                 .subtract(bounds.min);
 
-            if (tilePoint.y >= 0) {
-                if (isCanvasLayer) {
-                    var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y + ':' + zoom];
+            if (isCanvasLayer) {
+                var tile = layer._tiles[tilePoint.x + ':' + tilePoint.y + ':' + layer._tileZoom];
+                if(tile) {
                     tileQueue.defer(canvasTile, tile.el, tilePos, tileSize);
-                } else {
-                    var url = addCacheString(layer.getTileUrl(tilePoint));
-                    tileQueue.defer(loadTile, url, tilePos, tileSize);
                 }
+            } else {
+                var url = addCacheString(layer.getTileUrl(tilePoint));
+                tileQueue.defer(loadTile, url, tilePos, tileSize);
             }
         });
 
